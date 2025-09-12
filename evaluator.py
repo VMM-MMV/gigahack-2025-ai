@@ -164,16 +164,9 @@ class Evaluator:
 def main():
     """CLI to run evaluator using a client implementation.
     """
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default="roner_eval.json", help="Path to RONEC-style JSON file")
-    parser.add_argument("--limit", type=int, default=50, help="Max samples to evaluate (for speed)")
-    # --ignore-labels is only used on ronec original data because they use different labels
-    parser.add_argument("--ignore-labels", action="store_true",
-                        help="If set, evaluate spans ignoring labels (useful when label taxonomies differ)")
-    args = parser.parse_args()
-
     # Load data
-    examples = load_dataset(args.data, limit=args.limit)
+    ignore_labels = False
+    examples = load_dataset("mock_subset_200.json", 50)
     if not examples:
         print("No examples loaded. Check the --data path.")
         return
@@ -184,7 +177,7 @@ def main():
     # from anonymizer_template import Anonymizer
 
     client = Anonymizer()
-    evaluator = Evaluator(client, ignore_labels=args.ignore_labels)
+    evaluator = Evaluator(client, ignore_labels=ignore_labels)
 
     # Evaluate
     metrics = evaluator.evaluate(examples)
