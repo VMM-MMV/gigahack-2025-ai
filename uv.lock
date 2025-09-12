@@ -262,7 +262,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "scikit-learn", specifier = ">=1.7.2" },
-    { name = "spacy", specifier = ">=3.8.7" },
+    { name = "spacy", extras = ["cuda11"], specifier = ">=3.8.7" },
     { name = "torch", specifier = ">=2.8.0" },
     { name = "torchaudio", specifier = ">=2.8.0" },
     { name = "torchvision", specifier = ">=0.23.0" },

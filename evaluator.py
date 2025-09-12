@@ -172,8 +172,8 @@ def main():
         return
 
     # Init client and evaluator, use your client here
-    from anonymizer_ronec import AnonymizerRonec as Anonymizer
-    # from anonymizer_mock import AnonymizerMock as Anonymizer
+    # from anonymizer_ronec import AnonymizerRonec as Anonymizer
+    from anonymizer_mock import AnonymizerMock as Anonymizer
     # from anonymizer_template import Anonymizer
 
     client = Anonymizer()
