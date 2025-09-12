@@ -8,9 +8,60 @@ def convert_token_dataset_to_spacy(input_path, output_path):
 
     converted = []
 
+    print(len(raw_data))
+
     for sample in raw_data:
         tokens = sample["tokens"]
         ner_tags = sample["ner_tags"]
+
+        # Remove HTML tags and their corresponding NER tags
+        cleaned_tokens = []
+        cleaned_ner_tags = []
+        all_tag_tokens = []
+        
+        i = 0
+        while i < len(tokens):
+            token = tokens[i]
+            
+            # Check if current token is start of HTML tag
+            if token == "<":
+                # Look ahead to find the complete HTML tag
+                tag_tokens = ["<"]
+                j = i + 1
+                
+                # Collect tokens until we find the closing ">"
+                while j < len(tokens) and tokens[j] != ">":
+                    tag_tokens.append(tokens[j])
+                    j += 1
+                
+                # Add the closing ">" if found
+                if j < len(tokens) and tokens[j] == ">":
+                    tag_tokens.append(">")
+                    j += 1
+                
+                # Skip all tokens that were part of the HTML tag
+                i = j
+                # print(tag_tokens)
+                all_tag_tokens.extend(tag_tokens)
+                continue
+            else:
+                # Keep non-HTML tag tokens
+                cleaned_tokens.append(token)
+                cleaned_ner_tags.append(ner_tags[i])
+                i += 1
+
+        if len(all_tag_tokens) >= 1: 
+            # print(all_tag_tokens)
+            continue
+
+        # if all_tag_tokens != []: print(all_tag_tokens)
+
+        # If all tokens were HTML tags, skip this sample
+        if not cleaned_tokens:
+            continue
+
+        tokens = cleaned_tokens
+        ner_tags = cleaned_ner_tags
 
         text = ""
         token_offsets = []
@@ -71,12 +122,6 @@ def convert_token_dataset_to_spacy(input_path, output_path):
         if entity_start is not None:
             entities.append((entity_start, prev_end, entity_label))
 
-        tags_with_space = re.findall(r"<[^>]+>\s", text)
-        if tags_with_space: print("Tags followed by space:", tags_with_space)
-
-        # Remove those tags from the text
-        clean_text = re.sub(r"<[^>]+>\s", "", text)
-
         converted.append((text, {"entities": entities}))
 
     output_path = Path(output_path)
@@ -89,6 +134,6 @@ def convert_token_dataset_to_spacy(input_path, output_path):
 
 if __name__ == "__main__":
     convert_token_dataset_to_spacy(
-        input_path=r"C:\Users\mihai_vieru\Desktop\gigahack-2025-ai\mock_subset_200.json",
+        input_path=r"C:\Users\mihai_vieru\Desktop\FinTech - PII_MD\synthetic_moldova_pii_data.json",
         output_path=r"data\ner_dataset_spacy.jsonl"
     )
