@@ -1,33 +1,52 @@
 import json
+from pathlib import Path
+import re
 
 def convert_token_dataset_to_spacy(input_path, output_path):
     with open(input_path, "r", encoding="utf-8") as f:
         raw_data = json.load(f)
 
     converted = []
+
     for sample in raw_data:
         tokens = sample["tokens"]
         ner_tags = sample["ner_tags"]
-        space_after = sample.get("space_after", [True] * len(tokens))  # fallback if missing
 
-        # Rebuild text with spaces
-        text_parts = []
+        text = ""
         token_offsets = []
         pos = 0
-        for token, has_space in zip(tokens, space_after):
-            text_parts.append(token)
+
+        for i, token in enumerate(tokens):
             start = pos
-            end = pos + len(token)
+            text += token
+            end = start + len(token)
             token_offsets.append((start, end))
-            pos = end + (1 if has_space else 0)
-            if has_space:
-                text_parts.append(" ")
+            pos = end
 
-        text = "".join(text_parts).rstrip()  # remove trailing space
+            # Decide whether to add a space
+            if i + 1 < len(tokens):
+                next_token = tokens[i + 1]
 
-        # Collect entities from BIO/BILOU-style tags
+                # Skip space after '@'
+                if token == "@":
+                    continue
+
+                # Skip space after '.' if next token starts with uppercase letter
+                if token in [".", "-"] and next_token and not next_token[0].isupper():
+                    continue
+
+                if token in [","] and next_token and next_token[0].isdigit():
+                    continue
+
+                # Otherwise, add space only if next token starts with alphanumeric
+                if next_token and next_token[0].isalnum():
+                    text += " "
+                    pos += 1
+
+        # --- Convert BIO tags to entities ---
         entities = []
         entity_start, entity_label = None, None
+        prev_end = None
 
         for (start, end), tag in zip(token_offsets, ner_tags):
             if tag == "O":
@@ -40,24 +59,28 @@ def convert_token_dataset_to_spacy(input_path, output_path):
                 entity_start = start
                 entity_label = tag[2:]
             elif tag.startswith("I-") and entity_label == tag[2:]:
-                # continuation of entity
-                pass
+                pass  # continuation
             else:
-                # Handle inconsistent tags (start a new entity)
+                # inconsistent tag (treat as B-)
                 if entity_start is not None:
                     entities.append((entity_start, prev_end, entity_label))
                 entity_start = start
                 entity_label = tag[2:] if "-" in tag else tag
-
             prev_end = end
 
-        # Close last entity if open
         if entity_start is not None:
             entities.append((entity_start, prev_end, entity_label))
 
+        tags_with_space = re.findall(r"<[^>]+>\s", text)
+        if tags_with_space: print("Tags followed by space:", tags_with_space)
+
+        # Remove those tags from the text
+        clean_text = re.sub(r"<[^>]+>\s", "", text)
+
         converted.append((text, {"entities": entities}))
 
-    # Write to spaCy JSONL format
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)  # only the folder
     with open(output_path, "w", encoding="utf-8") as f_out:
         for item in converted:
             f_out.write(json.dumps(item, ensure_ascii=False) + "\n")
@@ -66,6 +89,6 @@ def convert_token_dataset_to_spacy(input_path, output_path):
 
 if __name__ == "__main__":
     convert_token_dataset_to_spacy(
-        input_path="../Data/new_format_dataset.json",
-        output_path="../Data/ner_dataset_spacy.jsonl"
+        input_path=r"C:\Users\mihai_vieru\Desktop\gigahack-2025-ai\mock_subset_200.json",
+        output_path=r"data\ner_dataset_spacy.jsonl"
     )
