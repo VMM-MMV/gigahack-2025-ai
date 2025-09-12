@@ -134,6 +134,6 @@ def convert_token_dataset_to_spacy(input_path, output_path):
 
 if __name__ == "__main__":
     convert_token_dataset_to_spacy(
-        input_path=r"C:\Users\mihai_vieru\Desktop\FinTech - PII_MD\synthetic_moldova_pii_data.json",
-        output_path=r"data\ner_dataset_spacy.jsonl"
+        input_path=r"synthetic_moldova_pii_data.json",
+        output_path=r"data/ner_dataset_spacy.jsonl"
     )

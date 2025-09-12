@@ -1,2 +1,4 @@
 __pycache__
 *.jsonl
+*.json
+models/
