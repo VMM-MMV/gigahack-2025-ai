@@ -4,8 +4,6 @@ import re
 from wordfreq import zipf_frequency
 
 def should_merge(tok1, tok2, lang="ro"):
-    # if tok1 == "Moldtelecom":
-    #     print("Debug: Found 'personal' token, not merging.")
     # First check if tokens form any known entity patterns
     merged = tok1 + tok2
     
@@ -32,8 +30,6 @@ def should_merge(tok1, tok2, lang="ro"):
         return True
     if re.match(r'^\*+[0-9]{4}$', merged):  # Masked card numbers
         return True
-    # if re.match(r'^[A-Za-z0-9]{20,40}$', merged):  # Crypto wallets
-    #     return True
     if re.match(r'^[0-9]{4,20}$', merged):  # Account numbers
         return True
     
@@ -61,10 +57,7 @@ def should_merge(tok1, tok2, lang="ro"):
     if re.match(r'^[A-Z][a-z]+-[A-Z][a-z]+$', merged):  # Hyphenated names
         return True
     
-    # Handle abbreviations (SA, SRL, etc.)
-    # if (len(tok1) <= 3 and tok1.isupper() and tok2.isalpha()) or \
-    #    (len(tok2) <= 3 and tok2.isupper() and tok1.isalpha()):
-    #     return True
+    # Handle specific known entities
     if merged.lower() in ["moldtelecom", "gmail"]:
         return True
     
@@ -74,28 +67,34 @@ def should_merge(tok1, tok2, lang="ro"):
     
     return zipf_frequency(merged.lower(), lang) > 0
 
-def fix_broken_tokens(tokens: list[str], space_after: list[bool]) -> tuple[list[str], list[bool]]:
+def fix_broken_tokens(tokens: list[str], ner_tags: list[str]) -> tuple[list[str], list[str]]:
+    """
+    Merge tokens that should be together and update their corresponding NER tags.
+    When merging, we keep the tag from the first token.
+    """
     merged_tokens: list[str] = []
-    merged_space: list[bool] = []
+    merged_tags: list[str] = []
     i = 0
 
     while i < len(tokens):
         if i + 1 < len(tokens) and should_merge(tokens[i], tokens[i + 1]):
             merged = tokens[i] + tokens[i + 1]
             merged_tokens.append(merged)
-            merged_space.append(space_after[i + 1])  # use spacing of last part
+            # Keep the tag from the first token, but if it's 'O' and second is not, use second
+            if ner_tags[i] == 'O' and ner_tags[i + 1] != 'O':
+                merged_tags.append(ner_tags[i + 1])
+            else:
+                merged_tags.append(ner_tags[i])
             i += 2
         else:
             merged_tokens.append(tokens[i])
-            merged_space.append(space_after[i])
+            merged_tags.append(ner_tags[i])
             i += 1
 
-    return merged_tokens, merged_space
+    return merged_tokens, merged_tags
 
 def remove_adjacent_duplicates(tokens, tags):
     """Collapse duplicates like ['Andrew','Andrew'] with same tag -> ['Andrew']."""
-    tags = [t.replace("B-", "").replace("I-", "") for t in tags]
-    
     cleaned_tokens, cleaned_tags = [], []
     for t, tag in zip(tokens, tags):
         if cleaned_tokens and cleaned_tokens[-1] == t and cleaned_tags[-1] == tag:
@@ -104,15 +103,26 @@ def remove_adjacent_duplicates(tokens, tags):
         cleaned_tags.append(tag)
     return cleaned_tokens, cleaned_tags
 
+def should_add_space(current_token, next_token):
+    """Determine if a space should be added between two tokens."""
+    if current_token == "@":
+        return False
+    if current_token in [".", "-"] and next_token and not next_token[0].isupper():
+        return False
+    if current_token == "," and next_token and next_token[0].isdigit():
+        return False
+    if next_token and next_token[0].isalnum():
+        return True
+    return False
+
 def convert_token_dataset_to_spacy(input_path, output_path):
     with open(input_path, "r", encoding="utf-8") as f:
         raw_data = json.load(f)
 
     converted = []
+    print(f"Processing {len(raw_data)} samples...")
 
-    print(len(raw_data))
-
-    for sample in raw_data:
+    for sample_idx, sample in enumerate(raw_data):
         tokens = sample["tokens"]
         ner_tags = sample["ner_tags"]
 
@@ -143,19 +153,20 @@ def convert_token_dataset_to_spacy(input_path, output_path):
                 i += 1
 
         if len(all_tag_tokens) >= 1:
-            print("Removed HTML tags:", " ".join(all_tag_tokens))
+            print(f"Sample {sample_idx}: Removed HTML tags:", " ".join(all_tag_tokens))
+        
         if not cleaned_tokens:
             continue
 
         tokens, ner_tags = cleaned_tokens, cleaned_ner_tags
 
-        # --- Step 2: Merge split names ---
+        # --- Step 2: Merge split tokens (like dates, emails, etc.) ---
         tokens, ner_tags = fix_broken_tokens(tokens, ner_tags)
 
         # --- Step 3: Remove adjacent duplicates ---
         tokens, ner_tags = remove_adjacent_duplicates(tokens, ner_tags)
 
-        # --- Step 4: Rebuild text with spaces ---
+        # --- Step 4: Rebuild text with proper spacing ---
         text = ""
         token_offsets = []
         pos = 0
@@ -167,47 +178,72 @@ def convert_token_dataset_to_spacy(input_path, output_path):
             token_offsets.append((start, end))
             pos = end
 
+            # Add space if needed
             if i + 1 < len(tokens):
                 next_token = tokens[i + 1]
-                if token == "@":
-                    continue
-                if token in [".", "-"] and next_token and not next_token[0].isupper():
-                    continue
-                if token in [","] and next_token and next_token[0].isdigit():
-                    continue
-                if next_token and next_token[0].isalnum():
+                if should_add_space(token, next_token):
                     text += " "
                     pos += 1
 
         # --- Step 5: Convert BIO tags to entities ---
         entities = []
-        entity_start, entity_label = None, None
-        prev_end = None
+        entity_start, entity_label, entity_end = None, None, None
 
-        for (start, end), tag in zip(token_offsets, ner_tags):
+        # # Debug: print tokens and tags for samples with DATA_NASTERII
+        # if any("DATA_NASTERII" in tag for tag in ner_tags):
+        #     print(f"\nDEBUG - Sample {sample_idx}:")
+        #     print(f"Text: {text}")
+        #     for i, (token, tag) in enumerate(zip(tokens, ner_tags)):
+        #         print(f"  {i}: '{token}' -> {tag}")
+        #     print(f"Token offsets: {token_offsets}")
+
+        for i, ((start, end), tag) in enumerate(zip(token_offsets, ner_tags)):
             if tag == "O":
                 if entity_start is not None:
-                    entities.append((entity_start, prev_end, entity_label))
-                    entity_start, entity_label = None, None
+                    entities.append((entity_start, entity_end, entity_label))
+                    entity_start, entity_label, entity_end = None, None, None
             elif tag.startswith("B-"):
                 if entity_start is not None:
-                    entities.append((entity_start, prev_end, entity_label))
+                    entities.append((entity_start, entity_end, entity_label))
                 entity_start = start
                 entity_label = tag[2:]
-            elif tag.startswith("I-") and entity_label == tag[2:]:
-                pass
+                entity_end = end
+            elif tag.startswith("I-"):
+                current_label = tag[2:]
+                if entity_start is not None and entity_label == current_label:
+                    # Continue current entity - update the end position
+                    entity_end = end
+                else:
+                    # Start new entity if no current entity or different label
+                    if entity_start is not None:
+                        entities.append((entity_start, entity_end, entity_label))
+                    entity_start = start
+                    entity_label = current_label
+                    entity_end = end
             else:
+                # Handle non-BIO tags (direct labels without B-/I- prefix)
                 if entity_start is not None:
-                    entities.append((entity_start, prev_end, entity_label))
+                    entities.append((entity_start, entity_end, entity_label))
+                # For direct labels, treat as single-token entity
                 entity_start = start
-                entity_label = tag[2:] if "-" in tag else tag
-            prev_end = end
+                entity_label = tag
+                entity_end = end
 
+        # Close any remaining entity
         if entity_start is not None:
-            entities.append((entity_start, prev_end, entity_label))
+            entities.append((entity_start, entity_end, entity_label))
+
+        # Debug: print resulting entities for DATA_NASTERII samples
+        # if any("DATA_NASTERII" in tag for tag in ner_tags):
+        #     print(f"Resulting entities:")
+        #     for start, end, label in entities:
+        #         if label == "DATA_NASTERII":
+        #             print(f"  {label}: '{text[start:end]}' ({start}-{end})")
+        #     print()
 
         converted.append((text, {"entities": entities}))
 
+    # Write output
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f_out:
@@ -218,7 +254,7 @@ def convert_token_dataset_to_spacy(input_path, output_path):
 
 if __name__ == "__main__":
     convert_token_dataset_to_spacy(
-        # input_path=r"mock_subset_200.json",
-        input_path=r"synthetic_moldova_pii_data.json",
+        input_path=r"mock_subset_200.json",
+        # input_path=r"synthetic_moldova_pii_data.json",
         output_path=r"data/ner_dataset_spacy.jsonl"
     )
