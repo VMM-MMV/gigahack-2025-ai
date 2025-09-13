@@ -115,6 +115,68 @@ def should_add_space(current_token, next_token):
         return True
     return False
 
+def remove_html_tags(tokens, ner_tags):
+    # --- Step 1: Remove valid HTML tags only ---
+    cleaned_tokens = []
+    cleaned_ner_tags = []
+    removed_html_tags = []
+    
+    # Common valid HTML tags (both opening and closing)
+    valid_html_tags = {
+        'a', 'abbr', 'address', 'area', 'article', 'aside', 'audio', 'b', 'base', 
+        'bdi', 'bdo', 'blockquote', 'body', 'br', 'button', 'canvas', 'caption', 
+        'cite', 'code', 'col', 'colgroup', 'data', 'datalist', 'dd', 'del', 
+        'details', 'dfn', 'dialog', 'div', 'dl', 'dt', 'em', 'embed', 'fieldset', 
+        'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 
+        'h6', 'head', 'header', 'hr', 'html', 'i', 'iframe', 'img', 'input', 
+        'ins', 'kbd', 'label', 'legend', 'li', 'link', 'main', 'map', 'mark', 
+        'meta', 'meter', 'nav', 'noscript', 'object', 'ol', 'optgroup', 'option', 
+        'output', 'p', 'param', 'picture', 'pre', 'progress', 'q', 'rp', 'rt', 
+        'ruby', 's', 'samp', 'script', 'section', 'select', 'small', 'source', 
+        'span', 'strong', 'style', 'sub', 'summary', 'sup', 'table', 'tbody', 
+        'td', 'template', 'textarea', 'tfoot', 'th', 'thead', 'time', 'title', 
+        'tr', 'track', 'u', 'ul', 'var', 'video', 'wbr'
+    }
+    
+    i = 0
+    while i < len(tokens):
+        token = tokens[i]
+        
+        if token == "<":
+            i += 1 
+            tag_tokens = ["<"]
+            if tokens[i] and tokens[i] == "/":
+                tag_tokens.append("/")
+                i += 1
+
+            while i < len(tokens) and tokens[i] in valid_html_tags:
+                tag_tokens.append(tokens[i])
+                i += 1
+
+            # Collect tokens until we find ">" or reach end
+            while i < len(tokens) and tokens[i] != ">":
+                cleaned_tokens.append(tokens[i])
+                cleaned_ner_tags.append(ner_tags[i])
+                i += 1
+            
+            if i < len(tokens) and tokens[i] == ">":
+                tag_tokens.append(">")
+                i += 1
+            removed_html_tags.extend(tag_tokens)
+                
+        else:
+            cleaned_tokens.append(token)
+            cleaned_ner_tags.append(ner_tags[i])
+            i += 1
+
+    if len(removed_html_tags) > 10:
+        print(f"Removed valid HTML tags:", " ".join(removed_html_tags))
+
+    if len(removed_html_tags) > 1:
+        print(f"Removed valid HTML tags:", " ".join(removed_html_tags))
+
+    return cleaned_tokens, cleaned_ner_tags
+
 def convert_token_dataset_to_spacy(input_path, output_path):
     with open(input_path, "r", encoding="utf-8") as f:
         raw_data = json.load(f)
@@ -126,39 +188,10 @@ def convert_token_dataset_to_spacy(input_path, output_path):
         tokens = sample["tokens"]
         ner_tags = sample["ner_tags"]
 
-        # --- Step 1: Remove HTML tags ---
-        cleaned_tokens = []
-        cleaned_ner_tags = []
-        all_tag_tokens = []
+        tokens, ner_tags = remove_html_tags(tokens, ner_tags)
         
-        i = 0
-        while i < len(tokens):
-            token = tokens[i]
-            
-            if token == "<":
-                tag_tokens = ["<"]
-                j = i + 1
-                while j < len(tokens) and tokens[j] != ">":
-                    tag_tokens.append(tokens[j])
-                    j += 1
-                if j < len(tokens) and tokens[j] == ">":
-                    tag_tokens.append(">")
-                    j += 1
-                i = j
-                all_tag_tokens.extend(tag_tokens)
-                continue
-            else:
-                cleaned_tokens.append(token)
-                cleaned_ner_tags.append(ner_tags[i])
-                i += 1
-
-        if len(all_tag_tokens) >= 1:
-            print(f"Sample {sample_idx}: Removed HTML tags:", " ".join(all_tag_tokens))
-        
-        if not cleaned_tokens:
+        if not tokens:
             continue
-
-        tokens, ner_tags = cleaned_tokens, cleaned_ner_tags
 
         # --- Step 2: Merge split tokens (like dates, emails, etc.) ---
         tokens, ner_tags = fix_broken_tokens(tokens, ner_tags)
@@ -189,7 +222,7 @@ def convert_token_dataset_to_spacy(input_path, output_path):
         entities = []
         entity_start, entity_label, entity_end = None, None, None
 
-        # # Debug: print tokens and tags for samples with DATA_NASTERII
+        # Debug: print tokens and tags for samples with DATA_NASTERII
         # if any("DATA_NASTERII" in tag for tag in ner_tags):
         #     print(f"\nDEBUG - Sample {sample_idx}:")
         #     print(f"Text: {text}")
@@ -254,7 +287,7 @@ def convert_token_dataset_to_spacy(input_path, output_path):
 
 if __name__ == "__main__":
     convert_token_dataset_to_spacy(
-        input_path=r"mock_subset_200.json",
-        # input_path=r"synthetic_moldova_pii_data.json",
+        # input_path=r"mock_subset_200.json",
+        input_path=r"synthetic_moldova_pii_data.json",
         output_path=r"data/ner_dataset_spacy.jsonl"
     )
