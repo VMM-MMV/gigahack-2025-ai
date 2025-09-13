@@ -12,5 +12,5 @@ with open(file_path, "r", encoding="utf-8") as f:
 
         print("Text:", text[:100], "...")  # show only first 100 chars for brevity
         for start, end, label in entities:
-            print(f"{label}: {text[start:end]}")
+            print(f"{label}: |{text[start:end]}|")
         print("-" * 50)

@@ -89,10 +89,6 @@ def extract_and_save_entities_spacy(input_jsonl_path, output_json_path, remove_d
             #     else:
             #         print("Unexpected line format:", line)
 
-    # Remove duplicates if requested
-    if remove_duplicates:
-        entities_dict = {label: list(dict.fromkeys(values)) for label, values in entities_dict.items()}
-
     # Save grouped entities to JSON
     with open(output_json_path, "w", encoding="utf-8") as f:
         json.dump(entities_dict, f, ensure_ascii=False, indent=2)
@@ -103,7 +99,7 @@ def extract_and_save_entities_spacy(input_jsonl_path, output_json_path, remove_d
 
 if __name__ == "__main__":
     entities = extract_and_save_entities_spacy(
-        "data/ner_dataset_spacy.jsonl",
+        "data/saas/ner_dataset_spacy-nw.jsonl",
         "grouped_entities.json"
     )
 

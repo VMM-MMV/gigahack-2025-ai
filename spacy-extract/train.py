@@ -105,7 +105,7 @@ def train(
                 break
 
 if __name__ == "__main__":
-    train_data_path = r"data/ner_dataset_spacy-1200.jsonl"
+    train_data_path = r"data/ner_dataset_spacy.jsonl"
     model_path = "models/spacy_metadata_extraction_model1.0"
     NUMBER_OF_EPOCHS = 10
     train(train_data_path, model_path, NUMBER_OF_EPOCHS)
