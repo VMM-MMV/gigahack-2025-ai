@@ -32,4 +32,4 @@ def evaluate_model_on_data(nlp, test_data):
 
 if __name__ == "__main__":
     # Example usage
-    run_spacy_evaluation("models/spacy_metadata_extraction_model1.0", "data/ner_dataset_spacy-test.jsonl")
+    run_spacy_evaluation(r"models/spacy_metadata_extraction_model1.0/best_model_epoch1", "train2.jsonl")
