@@ -5,9 +5,16 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "flask>=3.1.2",
+    "jsonl-to-conll>=1.0.2",
+    "levenshtein>=0.27.1",
+    "numpy>=2.2.6",
+    "scikit-learn>=1.7.2",
+    "seqeval>=1.2.2",
     "spacy>=3.8.7",
     "torch>=2.8.0",
     "torchaudio>=2.8.0",
     "torchvision>=0.23.0",
-    "transformers>=4.56.1",
+    "transformers[torch]>=4.56.1",
+    "wordfreq>=3.1.1",
 ]

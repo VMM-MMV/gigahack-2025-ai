@@ -1,0 +1,39 @@
+{
+  "CNP": [
+    "1891112 123456",
+    "285031555123456",
+    "28850315123456"
+  ],
+  "TELEFON_MOBIL": [
+    "069"
+  ],
+  "EMAIL": [
+    "ion.popescu@gmai l.com"
+  ],
+  "CONT_BANCAR": [
+    "IBAN MD24AG000000225100013104"
+  ],
+  "IBAN": [
+    "M D24AG000000225100013104",
+    "MD24AG0000002251000 13104",
+    "MD24AG000000225100013104",
+    "MD24AG000000225100014200",
+    "MD24AG0O0000225100013104"
+  ],
+  "ANGAJATOR": [
+    "bd. Dacia 12, Chișinău",
+    "bd. Ștefan cel Mare 101, Chișinău"
+  ],
+  "TELEFON_FIX": [
+    "022l23456"
+  ],
+  "WALLET_CRYPTO": [
+    "ion.p@gmail.com"
+  ],
+  "NUMAR_PLACA": [
+    "Volkswagen Passat din 2018"
+  ],
+  "NUMAR_LICENTA": [
+    "ÃAA123456"
+  ]
+}

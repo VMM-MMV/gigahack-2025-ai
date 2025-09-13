@@ -1,1 +1,4 @@
 __pycache__
+/bert_ner_model
+bert_ner_trainer.log
+synthetic_moldova_pii_data.json
