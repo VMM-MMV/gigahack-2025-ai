@@ -116,12 +116,14 @@ def should_add_space(current_token, next_token):
     return False
 
 def remove_html_tags(tokens, ner_tags):
-    # --- Step 1: Remove valid HTML tags only ---
+    """
+    Remove HTML tags by matching specific token patterns and remove all '>' characters.
+    """
     cleaned_tokens = []
     cleaned_ner_tags = []
     removed_html_tags = []
     
-    # Common valid HTML tags (both opening and closing)
+    # Common valid HTML tags
     valid_html_tags = {
         'a', 'abbr', 'address', 'area', 'article', 'aside', 'audio', 'b', 'base', 
         'bdi', 'bdo', 'blockquote', 'body', 'br', 'button', 'canvas', 'caption', 
@@ -142,39 +144,46 @@ def remove_html_tags(tokens, ner_tags):
     while i < len(tokens):
         token = tokens[i]
         
+        # Remove all ">" characters
+        if token == ">":
+            i += 1
+            continue
+            
+        # Check for HTML tag pattern starting with "<"
         if token == "<":
-            i += 1 
-            tag_tokens = ["<"]
-            if tokens[i] and tokens[i] == "/":
-                tag_tokens.append("/")
-                i += 1
-
-            while i < len(tokens) and tokens[i] in valid_html_tags:
-                tag_tokens.append(tokens[i])
-                i += 1
-
-            # Collect tokens until we find ">" or reach end
-            while i < len(tokens) and tokens[i] != ">":
-                cleaned_tokens.append(tokens[i])
-                cleaned_ner_tags.append(ner_tags[i])
+            if "B-" in ner_tags[i]:
+                print(ner_tags[i])
+            tag_start = i
+            i += 1
+            
+            if i < len(tokens) and tokens[i] == "/":
+                if "B-" in ner_tags[i]:
+                    print(ner_tags[i])
                 i += 1
             
-            if i < len(tokens) and tokens[i] == ">":
-                tag_tokens.append(">")
+            # HTML tag name
+            if i < len(tokens) and tokens[i].lower() in valid_html_tags:
+                if "B-" in ner_tags[i]:
+                    print(ner_tags[i])
                 i += 1
-            removed_html_tags.extend(tag_tokens)
+                
+                if i < len(tokens) and tokens[i] == "/":
+                    if "B-" in ner_tags[i]:
+                        print(ner_tags[i])
+                    i += 1
+                
+                removed_html_tags.extend(tokens[tag_start:i])
                 
         else:
+            # Regular token, keep it
             cleaned_tokens.append(token)
             cleaned_ner_tags.append(ner_tags[i])
             i += 1
-
-    if len(removed_html_tags) > 10:
-        print(f"Removed valid HTML tags:", " ".join(removed_html_tags))
-
-    if len(removed_html_tags) > 1:
-        print(f"Removed valid HTML tags:", " ".join(removed_html_tags))
-
+    
+    # Print removed tags if any were found
+    # if len(removed_html_tags) > 1:
+    #     print(f"Removed valid HTML tags: {' '.join(removed_html_tags)}")
+    
     return cleaned_tokens, cleaned_ner_tags
 
 def convert_token_dataset_to_spacy(input_path, output_path):
