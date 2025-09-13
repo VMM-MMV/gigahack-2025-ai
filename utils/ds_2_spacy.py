@@ -123,7 +123,6 @@ def remove_html_tags(tokens, ner_tags):
     cleaned_ner_tags = []
     removed_html_tags = []
     
-    # Common valid HTML tags
     valid_html_tags = {
         'a', 'abbr', 'address', 'area', 'article', 'aside', 'audio', 'b', 'base', 
         'bdi', 'bdo', 'blockquote', 'body', 'br', 'button', 'canvas', 'caption', 
@@ -151,31 +150,22 @@ def remove_html_tags(tokens, ner_tags):
             
         # Check for HTML tag pattern starting with "<"
         if token == "<":
-            if "B-" in ner_tags[i]:
-                print(ner_tags[i])
             tag_start = i
             i += 1
             
             if i < len(tokens) and tokens[i] == "/":
-                if "B-" in ner_tags[i]:
-                    print(ner_tags[i])
                 i += 1
             
             # HTML tag name
             if i < len(tokens) and tokens[i].lower() in valid_html_tags:
-                if "B-" in ner_tags[i]:
-                    print(ner_tags[i])
                 i += 1
                 
                 if i < len(tokens) and tokens[i] == "/":
-                    if "B-" in ner_tags[i]:
-                        print(ner_tags[i])
                     i += 1
                 
                 removed_html_tags.extend(tokens[tag_start:i])
                 
         else:
-            # Regular token, keep it
             cleaned_tokens.append(token)
             cleaned_ner_tags.append(ner_tags[i])
             i += 1
@@ -184,6 +174,34 @@ def remove_html_tags(tokens, ner_tags):
     # if len(removed_html_tags) > 1:
     #     print(f"Removed valid HTML tags: {' '.join(removed_html_tags)}")
     
+    return cleaned_tokens, cleaned_ner_tags
+
+def remove_new_line(tokens, ner_tags):
+    """
+    Remove HTML tags by matching specific token patterns and remove all '>' characters.
+    """
+    cleaned_tokens = []
+    cleaned_ner_tags = []
+    
+    i = 0
+    while i < len(tokens):
+        token = tokens[i]
+        if i < len(tokens) and i+1 < len(tokens):
+            # if token in ["\\", "n"]:
+            #     print(ner_tags[i])
+
+            if token == "\\" and tokens[i+1] and tokens[i+1][0] == "n":
+                if len(tokens[i+1]) > 1:
+                    tokens[i+1] = tokens[i+1][1:]
+                    i += 1
+                    continue
+                i += 2
+            # elif token == "\\":
+            #     i += 1
+        cleaned_tokens.append(token)
+        cleaned_ner_tags.append(ner_tags[i])
+        i += 1
+        
     return cleaned_tokens, cleaned_ner_tags
 
 def convert_token_dataset_to_spacy(input_path, output_path):
@@ -196,6 +214,8 @@ def convert_token_dataset_to_spacy(input_path, output_path):
     for sample_idx, sample in enumerate(raw_data):
         tokens = sample["tokens"]
         ner_tags = sample["ner_tags"]
+
+        tokens, ner_tags = remove_new_line(tokens, ner_tags)
 
         tokens, ner_tags = remove_html_tags(tokens, ner_tags)
         
@@ -230,14 +250,6 @@ def convert_token_dataset_to_spacy(input_path, output_path):
         # --- Step 5: Convert BIO tags to entities ---
         entities = []
         entity_start, entity_label, entity_end = None, None, None
-
-        # Debug: print tokens and tags for samples with DATA_NASTERII
-        # if any("DATA_NASTERII" in tag for tag in ner_tags):
-        #     print(f"\nDEBUG - Sample {sample_idx}:")
-        #     print(f"Text: {text}")
-        #     for i, (token, tag) in enumerate(zip(tokens, ner_tags)):
-        #         print(f"  {i}: '{token}' -> {tag}")
-        #     print(f"Token offsets: {token_offsets}")
 
         for i, ((start, end), tag) in enumerate(zip(token_offsets, ner_tags)):
             if tag == "O":
@@ -274,14 +286,6 @@ def convert_token_dataset_to_spacy(input_path, output_path):
         # Close any remaining entity
         if entity_start is not None:
             entities.append((entity_start, entity_end, entity_label))
-
-        # Debug: print resulting entities for DATA_NASTERII samples
-        # if any("DATA_NASTERII" in tag for tag in ner_tags):
-        #     print(f"Resulting entities:")
-        #     for start, end, label in entities:
-        #         if label == "DATA_NASTERII":
-        #             print(f"  {label}: '{text[start:end]}' ({start}-{end})")
-        #     print()
 
         converted.append((text, {"entities": entities}))
 
