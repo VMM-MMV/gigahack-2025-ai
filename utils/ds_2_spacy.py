@@ -4,10 +4,75 @@ import re
 from wordfreq import zipf_frequency
 
 def should_merge(tok1, tok2, lang="ro"):
+    # if tok1 == "Moldtelecom":
+    #     print("Debug: Found 'personal' token, not merging.")
+    # First check if tokens form any known entity patterns
+    merged = tok1 + tok2
+    
+    # Personal identification patterns
+    if re.match(r'^[0-9]{13}$', merged):  # CNP
+        return True
+    if re.match(r'^[A-Za-z]{2}[0-9]{6,10}$', merged):  # Passport numbers
+        return True
+    if re.match(r'^[0-9]{6,10}$', merged) and len(merged) >= 6:  # Identity card numbers
+        return True
+    
+    # Contact information patterns
+    if re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', merged):  # Email
+        return True
+    if re.match(r'^[0-9]{9,10}$', merged):  # Phone numbers
+        return True
+    if re.match(r'^MD-[0-9]{4}$', merged):  # Postal codes
+        return True
+    
+    # Financial patterns
+    if re.match(r'^[A-Z]{2}[0-9]{2}[A-Z0-9]{16,32}$', merged):  # IBAN
+        return True
+    if re.match(r'^[0-9]{16}$', merged):  # Card numbers (full)
+        return True
+    if re.match(r'^\*+[0-9]{4}$', merged):  # Masked card numbers
+        return True
+    # if re.match(r'^[A-Za-z0-9]{20,40}$', merged):  # Crypto wallets
+    #     return True
+    if re.match(r'^[0-9]{4,20}$', merged):  # Account numbers
+        return True
+    
+    # Contract and document patterns
+    if re.match(r'^[A-Z]{3}-[0-9]{4}-[0-9]{4,8}$', merged):  # Contract numbers
+        return True
+    if re.match(r'^[A-Z]{3}[0-9]{3,6}[A-Z]{0,2}$', merged):  # License plates
+        return True
+    if re.match(r'^[A-Z]{2}[0-9]{7,9}$', merged):  # License numbers
+        return True
+    
+    # Medical patterns
+    if re.match(r'^AM[0-9]{10}$', merged):  # Insurance numbers
+        return True
+    if re.match(r'^[ABO][+-]$', merged):  # Blood types
+        return True
+    
+    # Digital patterns
+    if re.match(r'^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$', merged):  # IP addresses
+        return True
+    if re.match(r'^DEV[0-9]{9}$', merged):  # Device IDs
+        return True
+    
+    # Handle hyphenated names
+    if re.match(r'^[A-Z][a-z]+-[A-Z][a-z]+$', merged):  # Hyphenated names
+        return True
+    
+    # Handle abbreviations (SA, SRL, etc.)
+    # if (len(tok1) <= 3 and tok1.isupper() and tok2.isalpha()) or \
+    #    (len(tok2) <= 3 and tok2.isupper() and tok1.isalpha()):
+    #     return True
+    if merged.lower() in ["moldtelecom", "gmail"]:
+        return True
+    
+    # Finally, check if it's a valid Romanian word
     if not tok1.isalnum() or not tok2.isalnum():
         return False
-    merged = (tok1 + tok2).lower()
-    return zipf_frequency(merged, lang) > 0
+    
+    return zipf_frequency(merged.lower(), lang) > 0
 
 def fix_broken_tokens(tokens: list[str], space_after: list[bool]) -> tuple[list[str], list[bool]]:
     merged_tokens: list[str] = []
@@ -29,6 +94,8 @@ def fix_broken_tokens(tokens: list[str], space_after: list[bool]) -> tuple[list[
 
 def remove_adjacent_duplicates(tokens, tags):
     """Collapse duplicates like ['Andrew','Andrew'] with same tag -> ['Andrew']."""
+    tags = [t.replace("B-", "").replace("I-", "") for t in tags]
+    
     cleaned_tokens, cleaned_tags = [], []
     for t, tag in zip(tokens, tags):
         if cleaned_tokens and cleaned_tokens[-1] == t and cleaned_tags[-1] == tag:
@@ -151,6 +218,7 @@ def convert_token_dataset_to_spacy(input_path, output_path):
 
 if __name__ == "__main__":
     convert_token_dataset_to_spacy(
-        input_path=r"/home/serveruser/gigahack-2025-ai/mock_subset_200.json",
+        # input_path=r"mock_subset_200.json",
+        input_path=r"synthetic_moldova_pii_data.json",
         output_path=r"data/ner_dataset_spacy.jsonl"
     )
