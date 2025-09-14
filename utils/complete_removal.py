@@ -315,7 +315,7 @@ def complete_duplicate_removal_pipeline(
     grouped_entities_path="grouped_values.json",
     outliers_path="simplified_outliers.json",
     cleaned_dataset_path="cleaned_dataset.json",
-    threshold=0.5
+    threshold=0.2
 ):
     """
     Complete pipeline for duplicate/outlier removal.
