@@ -2,7 +2,7 @@ from typing import Tuple, Dict, List, Any, Optional
 import spacy
 
 # Replace this with your spaCy model path (local folder path)
-MODEL_PATH = r"C:\Users\Huntrese\Documents\github\gigahack-2025-ai\models\spacy_metadata_extraction_model3.0\best_model_epoch10"
+MODEL_PATH = r"C:\Users\Huntrese\Documents\github\gigahack-2025-ai\best_model_epoch10"
 
 # Label map EXACTLY matching the Moldova-specific PII labels (do not change)
 LABEL_MAP = {
