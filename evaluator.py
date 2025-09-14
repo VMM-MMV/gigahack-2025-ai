@@ -6,6 +6,7 @@ Evaluator for anonymization clients.
 - Runs an anonymization client to get predicted spans via metadata
 - Computes micro precision/recall/F1 (optionally span-only with --ignore-labels)
 - Verifies deanonymization fidelity (exact text match to original)
+- Times each example and reports total/average time
 
 Usage examples:
 
@@ -25,6 +26,8 @@ Programmatic:
 from typing import List, Dict, Tuple, Any
 import argparse
 import json
+import time
+
 
 def load_dataset(path: str, limit: int | None = None) -> List[Dict[str, Any]]:
     """Load a JSONL dataset where each line is [text, entities_dict] and return a list of examples with
@@ -75,6 +78,7 @@ class Evaluator:
     def evaluate(self, examples: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Evaluate micro P/R/F1 and deanonymization fidelity.
         examples: list of {text, gold_spans}
+        Returns metrics + timing info
         """
         tp = 0
         fp = 0
@@ -82,22 +86,38 @@ class Evaluator:
         deanonym_ok = 0
         total = 0
 
+        total_time = 0.0
+        anonymize_time = 0.0
+        deanonymize_time = 0.0
+        per_example_times = []
+
         for ex in examples:
             total += 1
             text = ex["text"]
             gold = ex["gold_spans"]
+
+            start_total = time.perf_counter()
+
+            # Anonymize
+            start_anon = time.perf_counter()
             anon_text, metadata = self.client.anonymize(text)
+            end_anon = time.perf_counter()
+            anonymize_time += end_anon - start_anon
 
-            # Predicted spans expected in metadata["entities"]
-            pred_spans = metadata.get("entities", []) if isinstance(metadata, dict) else []
-
-            # Deanonymization check
+            # Deanonymize
+            start_deanon = time.perf_counter()
             try:
                 deanon = self.client.deanonymize(anon_text, metadata)
                 if deanon == text:
                     deanonym_ok += 1
-            except Exception:
+            except Exception as e:
+                # Log if needed: print(f"Deanonymization failed: {e}")
                 pass
+            end_deanon = time.perf_counter()
+            deanonymize_time += end_deanon - start_deanon
+
+            # Predicted spans
+            pred_spans = metadata.get("entities", []) if isinstance(metadata, dict) else []
 
             gold_set = self._to_tuple_set(gold)
             pred_set = self._to_tuple_set(pred_spans)
@@ -106,9 +126,16 @@ class Evaluator:
             fp += len(pred_set - gold_set)
             fn += len(gold_set - pred_set)
 
+            end_total = time.perf_counter()
+            example_time = end_total - start_total
+            per_example_times.append(example_time)
+            total_time += example_time
+
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
         f1 = (2 * precision * recall / (precision + recall)) if (precision + recall) > 0 else 0.0
+
+        avg_time_per_example = total_time / total if total > 0 else 0.0
 
         return {
             "samples": total,
@@ -118,6 +145,16 @@ class Evaluator:
             "precision": precision,
             "recall": recall,
             "f1": f1,
+            "deanonymization_success_rate": deanonym_ok / total if total > 0 else 0.0,
+
+            # Timing metrics
+            "total_time_seconds": total_time,
+            "avg_time_per_example_seconds": avg_time_per_example,
+            "anonymize_time_total_seconds": anonymize_time,
+            "deanonymize_time_total_seconds": deanonymize_time,
+            "anonymize_time_avg_seconds": anonymize_time / total if total > 0 else 0.0,
+            "deanonymize_time_avg_seconds": deanonymize_time / total if total > 0 else 0.0,
+            "per_example_times_seconds": per_example_times,  # Optional: for detailed analysis
         }
 
 
@@ -126,21 +163,38 @@ def main():
     """
     # Load data from new JSONL format
     ignore_labels = False
-    examples = load_dataset("data/ner_dataset_spacy.jsonl", 500)
+    examples = load_dataset(r"C:\Users\Huntrese\Documents\github\gigahack-2025-ai\data\ner_dataset_spacy.jsonl", limit=2000)
     if not examples:
         print("No examples loaded. Check the --data path.")
         return
 
     # Init client and evaluator
     from anonymizer_template import Anonymizer
-    client = Anonymizer(model_path=r"models\spacy_metadata_extraction_model2.0\best_model_epoch4")
+    client = Anonymizer(model_path=r"C:\Users\Huntrese\Documents\github\gigahack-2025-ai\models\spacy_metadata_extraction_model2.0\best_model_epoch4")
     evaluator = Evaluator(client, ignore_labels=ignore_labels)
 
     # Evaluate
+    print("Starting evaluation...")
+    start_eval = time.perf_counter()
     metrics = evaluator.evaluate(examples)
-    print("Results:")
+    end_eval = time.perf_counter()
+
+    print("\n=== RESULTS ===")
     for k, v in metrics.items():
-        print(f"  {k}: {v}")
+        if isinstance(v, float):
+            print(f"  {k}: {v:.4f}")
+        elif isinstance(v, list):  # Skip printing long list of per-example times
+            continue
+        else:
+            print(f"  {k}: {v}")
+
+    print(f"\n=== TIMING SUMMARY ===")
+    print(f"Total evaluation time: {end_eval - start_eval:.4f} seconds")
+    print(f"Total examples processed: {metrics['samples']}")
+    print(f"Average time per example: {metrics['avg_time_per_example_seconds']:.4f} seconds")
+    print(f"Anonymization (avg): {metrics['anonymize_time_avg_seconds']:.4f} s")
+    print(f"Deanonymization (avg): {metrics['deanonymize_time_avg_seconds']:.4f} s")
+    print(f"Deanonymization success rate: {metrics['deanonymization_success_rate']:.2%}")
 
 
 if __name__ == "__main__":

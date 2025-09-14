@@ -1,9 +1,8 @@
 from typing import Tuple, Dict, List, Any, Optional
 import spacy
-import os
 
 # Replace this with your spaCy model path (local folder path)
-MODEL_PATH = "models\model_899"  # Set to your spaCy model path
+MODEL_PATH = r"C:\Users\Huntrese\Documents\github\gigahack-2025-ai\models\spacy_metadata_extraction_model3.0\best_model_epoch10"
 
 # Label map EXACTLY matching the Moldova-specific PII labels (do not change)
 LABEL_MAP = {
@@ -77,7 +76,7 @@ class Anonymizer:
     def __init__(self, model_path: Optional[str] = None):
         # Load spaCy model directly
         self.nlp = spacy.load(model_path or MODEL_PATH)
-        print("[Anonymizer] spaCy model loaded successfully")
+        print(f"[Anonymizer] spaCy model loaded from {self.nlp.path}")
 
     @staticmethod
     def _map_label(entity_label: str) -> str:
@@ -89,31 +88,27 @@ class Anonymizer:
     def anonymize(self, text: str) -> Tuple[str, Dict]:
         # Process text with spaCy
         doc = self.nlp(text)
-        predicted_spans = []
         
-        for ent in doc.ents:
-            s = ent.start_char
-            e = ent.end_char
-            label = self._map_label(ent.label_)
-            predicted_spans.append({
-                "start": s,
-                "end": e,
-                "label": label,
-                "text": ent.text,
-            })
-
-        predicted_spans.sort(key=lambda s: s["start"])  # Sort by start position
-
+        # Sort entities by start position to process in order
+        entities = sorted(doc.ents, key=lambda ent: ent.start_char)
+        
         # Build anonymized text with placeholders
         parts = []
         cursor = 0
         entities_meta = []
-        for idx, span in enumerate(predicted_spans, start=1):
-            s, e, label = span["start"], span["end"], span["label"]
+        
+        for idx, ent in enumerate(entities, start=1):
+            s = ent.start_char
+            e = ent.end_char
+            label = self._map_label(ent.label_)
             placeholder = f"<{label}_{idx}>"
+            
+            # Add text before entity
             parts.append(text[cursor:s])
+            # Add placeholder
             parts.append(placeholder)
             cursor = e
+            
             entities_meta.append({
                 "start": s,
                 "end": e,
@@ -121,16 +116,29 @@ class Anonymizer:
                 "text": text[s:e],
                 "replacement": placeholder,
             })
+        
+        # Add remaining text
         parts.append(text[cursor:])
         anon_text = "".join(parts)
         metadata = {"entities": entities_meta}
+        
         return anon_text, metadata
 
     def deanonymize(self, text: str, metadata: Dict) -> str:
-        # Ensure metadata has entities
+        """
+        Reverses the anonymization process by replacing placeholders with original text.
+        Uses exact string matching for 100% accuracy.
+        """
         entities = metadata.get("entities", [])
         result = text
-        # Process in reverse order to avoid replacement issues
+        
+        # Replace placeholders in reverse order to handle nested cases correctly
         for ent in reversed(entities):
-            result = result.replace(ent["replacement"], ent["text"], 1)
+            replacement = ent.get("replacement")
+            original_text = ent.get("text")
+            
+            if replacement and original_text:
+                # Use exact string replacement (case-sensitive)
+                result = result.replace(replacement, original_text, 1)
+                
         return result

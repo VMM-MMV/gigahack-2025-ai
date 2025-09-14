@@ -13,9 +13,9 @@ entity_regexes = {
     "NUME_PRENUME": r"^[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+$",
     "CNP": r"\b[1-8]\d{12}\b",
     "DATA_NASTERII": r"\b(0[1-9]|[12][0-9]|3[01])\s?[\/.]\s?(0[1-9]|1[0-2])\s?[\/.]\s?(19|20)\d{2}\b",
-    "SEX": r"^(masculin|feminin)$",
+    # "SEX": r"^(masculin|feminin)$",
     # "NATIONALITATE": r"^(română|moldoveană|român|moldovean)$", nope
-    "LIMBA_VORBITA": r"^(română|rusă|engleză|ucraineană|găgăuză)(?:,\s*(română|rusă|engleză|ucraineană|găgăuză))*$",
+    # "LIMBA_VORBITA": r"^(română|rusă|engleză|ucraineană|găgăuză)(?:,\s*(română|rusă|engleză|ucraineană|găgăuză))*$",
     # "ADRESA": r"^str\.?\s+[A-Z][a-z]*(?:\s+[A-Z][a-z]*)*\s+\d+(?:[A-Za-z]?)?,\s+[A-Z][a-z]*(?:\s+[A-Z][a-z]*)*$", nope
     # "ADRESA_LUCRU": r"^str\.?\s+[A-Z][a-z]*(?:\s+[A-Z][a-z]*)*\s+\d+(?:[A-Za-z]?)?,\s+[A-Z][a-z]*(?:\s+[A-Z][a-z]*)*$", nope
     "TELEFON_MOBIL": r"\b06[789]\d{6}\b",
@@ -54,24 +54,25 @@ entity_regexes = {
     # "STATUT_FATCA": r"^(activ|inactiv)$"
 }
 
-# Compile without VERBOSE — pure simple
-regex = re.compile(entity_regexes["USERNAME"], re.IGNORECASE)
+if __name__ == "__main__":
+    # Compile without VERBOSE — pure simple
+    regex = re.compile(entity_regexes["USERNAME"], re.IGNORECASE)
 
-with open("mock_subset_200.json", "r", encoding="UTF-8") as f:
-    raw_data = json.load(f)
+    with open("mock_subset_200.json", "r", encoding="UTF-8") as f:
+        raw_data = json.load(f)
 
-matches = []
+    matches = []
 
-for entry in raw_data:
-    if isinstance(entry, dict) and 'tokens' in entry:
-        full_text = ' '.join(entry['tokens'])
-        print("Searching in text:", full_text)
-        match = regex.search(full_text)
-        if match:
-            print("  Found match:", match.group(0))
-            matches.append(match.group(0))
+    for entry in raw_data:
+        if isinstance(entry, dict) and 'tokens' in entry:
+            full_text = ' '.join(entry['tokens'])
+            print("Searching in text:", full_text)
+            match = regex.search(full_text)
+            if match:
+                print("  Found match:", match.group(0))
+                matches.append(match.group(0))
 
-with open("matches.json", "w", encoding="UTF-8") as out_f:
-    json.dump(matches, out_f, indent=2, ensure_ascii=False)
+    with open("matches.json", "w", encoding="UTF-8") as out_f:
+        json.dump(matches, out_f, indent=2, ensure_ascii=False)
 
-print(f"Found {len(matches)}  matches. Written to matches.json")
+    print(f"Found {len(matches)}  matches. Written to matches.json")
