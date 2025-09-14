@@ -198,7 +198,7 @@ def remove_new_line(tokens, ner_tags):
                 i += 2
             # elif token == "\\":
             #     i += 1
-        cleaned_tokens.append(token)
+        cleaned_tokens.append(tokens[i])
         cleaned_ner_tags.append(ner_tags[i])
         i += 1
         
