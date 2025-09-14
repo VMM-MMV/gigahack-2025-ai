@@ -361,18 +361,25 @@ body::before {
 }
 
 .collapse-btn {
-  background: (255, 255, 255, 0.1);
+  background: transparent;
   border: none;
-  color: #2d3748;
-  font-weight: 600;
+  display: flex;
+  align-items: center;
   cursor: pointer;
   font-size: 0.9rem;
   padding: 0.5rem 1rem;
   border-radius: 12px;
   transition: background 0.3s ease;
+  COLOR: #fff;
 }
 .collapse-btn:hover {
   background: rgba(0, 0, 0, 0.1);
+}
+.collapse-btn svg{
+  transition: transform 0.3s ease;
+}
+.collapse-btn svg.rotated{
+  transform: rotate(180deg);
 }
 
 .output-title {

@@ -57,16 +57,30 @@
       </div>
 
       <div class="output-card" *ngIf="metadata">
-        <div class="output-header">
-          <h3 class="output-title">Metadata</h3>
-          <button class="collapse-btn" (click)="isCollapsed = !isCollapsed">
-            {{ isCollapsed ? 'Expand' : 'Collapse' }}
-          </button>
-        </div>
-        <div class="output-content">
-          <pre class="output-value">{{ metadata | json }}</pre>
-        </div>
-      </div>
+  <div class="output-header">
+    <h3 class="output-title">Metadata</h3>
+    <button class="collapse-btn" (click)="isCollapsed = !isCollapsed">
+      <svg
+        [class.rotated]="isCollapsed"
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <polyline points="6 9 12 15 18 9"></polyline>
+      </svg>
+    </button>
+  </div>
+  <!-- Bind visibility to isCollapsed -->
+  <div class="output-content" *ngIf="!isCollapsed">
+    <pre class="output-value">{{ metadata | json }}</pre>
+  </div>
+</div>
 
       <div class="output-card" *ngIf="deanonymizedText">
         <div class="output-header">
