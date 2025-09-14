@@ -1,3 +1,181 @@
+# 🛡️ Text Anonymization API
+
+This FastAPI service provides two main endpoints:
+
+- **`/anonymize`** → Detects and replaces sensitive information with placeholders.  
+- **`/deanonymize`** → Restores anonymized text using the provided metadata.
+
+---
+
+## 🚀 Getting Started
+
+### Run the API
+```bash
+uvicorn main:app --reload
+````
+
+The service will be available at:
+👉 `http://127.0.0.1:8000`
+
+Interactive Swagger docs:
+👉 [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+
+---
+
+## 📌 Endpoints
+
+### 1. **POST /anonymize**
+
+**Request body:**
+
+```json
+{
+  "text": "Domnul Ion Popescu, inginer software cu studii superioare în domeniul IT, născut în Moldova și angajat la sediul companiei situat pe bd. Dacia 12, Chișinău, solicită un credit în valoare de 150000 lei, destinat finanțării achiziției unui echipament informatic performant, oferind drept garanție contul bancar IBAN MD24AG000000225100013104 și cardul bancar cu numărul mascat***1234, urmând ca rambursarea să se realizeze în tranșe lunare egale pe o perioadă de 36 de luni, conform condițiilor contractuale transmise pe adresa sa de email ion.popescu@gmail.com și asigurate prin polița medicală AM1234567890."
+}
+```
+
+**Response body:**
+
+```json
+{
+  "anonymized_text": "Domnul <NUME_PRENUME_1>, <PROFESIE_2> cu <EDUCATIE_3>, născut în <NATIONALITATE_4> și angajat la sediul companiei situat pe <ADRESA_LUCRU_5>, solicită un credit în valoare de 150000 lei, destinat finanțării achiziției unui echipament informatic performant, oferind drept garanție contul bancar IBAN <IBAN_6> și cardul bancar cu numărul mascat***1234, urmând ca rambursarea să se realizeze în tranșe lunare egale pe o perioadă de 36 de luni, conform condițiilor contractuale transmise pe adresa sa de email <EMAIL_7> și asigurate prin polița medicală <ASIGURARE_MEDICALA_8>.",
+  "metadata": {
+    "entities": [
+      {
+        "start": 7,
+        "end": 18,
+        "label": "NUME_PRENUME",
+        "text": "Ion Popescu",
+        "replacement": "<NUME_PRENUME_1>"
+      },
+      {
+        "start": 20,
+        "end": 36,
+        "label": "PROFESIE",
+        "text": "inginer software",
+        "replacement": "<PROFESIE_2>"
+      },
+      {
+        "start": 40,
+        "end": 72,
+        "label": "EDUCATIE",
+        "text": "studii superioare în domeniul IT",
+        "replacement": "<EDUCATIE_3>"
+      },
+      {
+        "start": 84,
+        "end": 91,
+        "label": "NATIONALITATE",
+        "text": "Moldova",
+        "replacement": "<NATIONALITATE_4>"
+      },
+      {
+        "start": 133,
+        "end": 155,
+        "label": "ADRESA_LUCRU",
+        "text": "bd. Dacia 12, Chișinău",
+        "replacement": "<ADRESA_LUCRU_5>"
+      },
+      {
+        "start": 314,
+        "end": 338,
+        "label": "IBAN",
+        "text": "MD24AG000000225100013104",
+        "replacement": "<IBAN_6>"
+      },
+      {
+        "start": 537,
+        "end": 558,
+        "label": "EMAIL",
+        "text": "ion.popescu@gmail.com",
+        "replacement": "<EMAIL_7>"
+      },
+      {
+        "start": 593,
+        "end": 605,
+        "label": "ASIGURARE_MEDICALA",
+        "text": "AM1234567890",
+        "replacement": "<ASIGURARE_MEDICALA_8>"
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 2. **POST /deanonymize**
+
+**Request body:**
+
+```json
+{
+  "text": "Domnul <NUME_PRENUME_1>, <PROFESIE_2> cu <EDUCATIE_3>, născut în <NATIONALITATE_4> și angajat la sediul companiei situat pe <ADRESA_LUCRU_5>, solicită un credit în valoare de 150000 lei, destinat finanțării achiziției unui echipament informatic performant, oferind drept garanție contul bancar IBAN <IBAN_6> și cardul bancar cu numărul mascat***1234, urmând ca rambursarea să se realizeze în tranșe lunare egale pe o perioadă de 36 de luni, conform condițiilor contractuale transmise pe adresa sa de email <EMAIL_7> și asigurate prin polița medicală <ASIGURARE_MEDICALA_8>.",
+  "metadata": {
+    "entities": [
+      { "label": "NUME_PRENUME", "text": "Ion Popescu", "replacement": "<NUME_PRENUME_1>" },
+      { "label": "PROFESIE", "text": "inginer software", "replacement": "<PROFESIE_2>" },
+      { "label": "EDUCATIE", "text": "studii superioare în domeniul IT", "replacement": "<EDUCATIE_3>" },
+      { "label": "NATIONALITATE", "text": "Moldova", "replacement": "<NATIONALITATE_4>" },
+      { "label": "ADRESA_LUCRU", "text": "bd. Dacia 12, Chișinău", "replacement": "<ADRESA_LUCRU_5>" },
+      { "label": "IBAN", "text": "MD24AG000000225100013104", "replacement": "<IBAN_6>" },
+      { "label": "EMAIL", "text": "ion.popescu@gmail.com", "replacement": "<EMAIL_7>" },
+      { "label": "ASIGURARE_MEDICALA", "text": "AM1234567890", "replacement": "<ASIGURARE_MEDICALA_8>" }
+    ]
+  }
+}
+```
+
+**Response body:**
+
+```json
+{
+  "deanonymized_text": "Domnul Ion Popescu, inginer software cu studii superioare în domeniul IT, născut în Moldova și angajat la sediul companiei situat pe bd. Dacia 12, Chișinău, solicită un credit în valoare de 150000 lei, destinat finanțării achiziției unui echipament informatic performant, oferind drept garanție contul bancar IBAN MD24AG000000225100013104 și cardul bancar cu numărul mascat***1234, urmând ca rambursarea să se realizeze în tranșe lunare egale pe o perioadă de 36 de luni, conform condițiilor contractuale transmise pe adresa sa de email ion.popescu@gmail.com și asigurate prin polița medicală AM1234567890."
+}
+```
+
+---
+
+## 🔧 Usage Examples
+
+### cURL
+
+```bash
+curl -X POST "http://127.0.0.1:8000/anonymize" \
+     -H "Content-Type: application/json" \
+     -d '{"text":"Domnul Ion Popescu, inginer software..."}'
+```
+
+### Python
+
+```python
+import requests
+
+resp = requests.post("http://127.0.0.1:8000/anonymize",
+                     json={"text": "Domnul Ion Popescu, inginer software..."})
+print(resp.json())
+```
+
+### Postman
+
+* Select `POST`
+* URL: `http://127.0.0.1:8000/anonymize`
+* Body → raw → JSON
+* Paste the request example
+
+---
+
+## ✅ Notes
+
+* Always call `/anonymize` first to generate the `metadata`.
+* Use the returned `metadata` to call `/deanonymize`.
+* Works with **Swagger UI**, **Postman**, **cURL**, and **Python requests**.
+
+
+
+
+
+
 ## Evaluator
 Evaluator.py will be used to evaluate your model.
 Make sure the code is compatible with it.
