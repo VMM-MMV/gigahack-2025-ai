@@ -28,55 +28,34 @@ export class AppComponent {
   loading = false;
   errorMessage = '';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
+
+  metadata: any = null;
 
   anonymize() {
-    if (!this.inputText) {
-      this.anonymizedText = '';
-      return;
-    }
-
-    this.loading = true;
-    this.errorMessage = '';
-
-    this.http.post<{ anonymized: string }>(
-      'https://your-backend-url/anonymize', // <-- replace with your actual API endpoint
-      { text: this.inputText }
-    ).pipe(
-      catchError(err => {
-        this.errorMessage = 'Failed to anonymize text. Try again.';
-        this.loading = false;
-        return throwError(() => err);
-      })
-    ).subscribe(response => {
-      this.anonymizedText = response.anonymized;
-      this.loading = false;
-    });
+    this.http.post<any>('http://127.0.0.1:8000/anonymize', { text: this.inputText })
+      .subscribe(response => {
+        this.anonymizedText = response.anonymized_text;
+        this.metadata = response.metadata; // save metadata for later
+      });
   }
 
   deanonymize() {
-    if (!this.inputText) {
-      this.deanonymizedText = '';
+    if (!this.anonymizedText || !this.metadata) {
+      alert("Please anonymize first before deanonymizing.");
       return;
     }
 
-    this.loading = true;
-    this.errorMessage = '';
-
-    this.http.post<{ deanonymized: string }>(
-      'https://your-backend-url/deanonymize', // <-- replace with your backend endpoint
-      { text: this.inputText }
-    ).pipe(
-      catchError(err => {
-        this.errorMessage = 'Failed to deanonymize text. Try again.';
-        this.loading = false;
-        return throwError(() => err);
-      })
-    ).subscribe(response => {
-      this.deanonymizedText = response.deanonymized;
-      this.loading = false;
+    this.http.post<any>('http://127.0.0.1:8000/deanonymize', {
+      text: this.anonymizedText,
+      metadata: this.metadata
+    }).subscribe(response => {
+      this.deanonymizedText = response.deanonymized_text;
     });
   }
+
+
+
 
   clear() {
     this.inputText = '';

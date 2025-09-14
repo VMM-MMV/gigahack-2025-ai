@@ -1,10 +1,24 @@
-
 from fastapi import FastAPI
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 from anonymizer_template import Anonymizer
 
 app = FastAPI()
 anonymizer = Anonymizer()
+
+# ✅ Allow Angular dev server (http://localhost:4200) to call the API
+origins = [
+    "http://localhost:4200",
+    "http://127.0.0.1:4200"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,        # or ["*"] to allow all
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class AnonymizeRequest(BaseModel):
     text: str
