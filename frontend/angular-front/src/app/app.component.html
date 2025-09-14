@@ -1,0 +1,80 @@
+<div class="app-container">
+  <div class="main-content">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header-content">
+        <h1 class="title">{{ title }}</h1>
+        <p class="subtitle">Intelligent Data Type Detection System</p>
+        <div class="connection-info">
+          Status: <code class="endpoint-code">Ready</code>
+        </div>
+      </div>
+    </header>
+
+    <!-- Mode Switcher -->
+    <section class="mode-section">
+      <div class="mode-switcher">
+        <button
+          class="mode-btn"
+          [class.active]="currentMode==='anonymize'"
+          (click)="setMode('anonymize')">
+          Anonymize
+        </button>
+        <button
+          class="mode-btn"
+          [class.active]="currentMode==='deanonymize'"
+          (click)="setMode('deanonymize')">
+          Deanonymize
+        </button>
+      </div>
+    </section>
+
+    <!-- Input Form -->
+    <section class="controls-section">
+      <div class="form-wrapper">
+        <div class="form-group">
+          <label class="form-label" for="inputText">
+            Enter your text
+          </label>
+          <textarea
+            id="inputText"
+            class="form-textarea"
+            [(ngModel)]="inputText"
+            placeholder="Paste text here..."></textarea>
+        </div>
+        <div class="button-group">
+          <button class="btn btn-primary" (click)="anonymize()">Anonymize</button>
+          <button class="btn btn-outline" (click)="deanonymize()">Deanonymize</button>
+          <button class="btn btn-outline" (click)="clear()">Clear</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Output Section -->
+    <section class="output-section" *ngIf="anonymizedText || deanonymizedText">
+      <div class="output-card" *ngIf="anonymizedText">
+        <div class="output-header">
+          <h3 class="output-title">Anonymized Output</h3>
+        </div>
+        <div class="output-content">
+          <div class="output-value anonymized-text">
+            {{ anonymizedText }}
+          </div>
+        </div>
+      </div>
+
+      <div class="output-card" *ngIf="deanonymizedText">
+        <div class="output-header">
+          <h3 class="output-title">Deanonymized Output</h3>
+        </div>
+        <div class="output-content">
+          <div class="output-value deanonymized-text">
+            {{ deanonymizedText }}
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
