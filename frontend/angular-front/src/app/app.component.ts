@@ -31,6 +31,7 @@ export class AppComponent {
   constructor(private http: HttpClient) { }
 
   metadata: any = null;
+  isCollapsed = false; 
 
   anonymize() {
     this.http.post<any>('http://127.0.0.1:8000/anonymize', { text: this.inputText })

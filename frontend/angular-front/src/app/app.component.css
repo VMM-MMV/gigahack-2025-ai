@@ -352,9 +352,27 @@ body::before {
 }
 
 .output-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   background: rgba(255, 255, 255, 0.08);
   padding: 1.5rem 2rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.collapse-btn {
+  background: (255, 255, 255, 0.1);
+  border: none;
+  color: #2d3748;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  transition: background 0.3s ease;
+}
+.collapse-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .output-title {
@@ -382,7 +400,7 @@ body::before {
 }
 
 .output-value {
-  background: rgba(255, 255, 255, 0.9);
+  background: white;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 16px;
   padding: 1.5rem;
@@ -394,6 +412,10 @@ body::before {
   position: relative;
   word-break: break-word;
   font-weight: 500;
+  white-space: pre-wrap;
+  word-wrap:break-word;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .output-value:hover {
@@ -416,7 +438,7 @@ body::before {
 }
 
 .anonymized-text {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15), rgba(118, 75, 162, 0.15));
+  background: linear-gradient(120deg, rgba(102, 126, 234, 0.08), white);
   border-color: rgba(102, 126, 234, 0.4);
 }
 

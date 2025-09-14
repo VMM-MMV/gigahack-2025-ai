@@ -59,6 +59,9 @@
       <div class="output-card" *ngIf="metadata">
         <div class="output-header">
           <h3 class="output-title">Metadata</h3>
+          <button class="collapse-btn" (click)="isCollapsed = !isCollapsed">
+            {{ isCollapsed ? 'Expand' : 'Collapse' }}
+          </button>
         </div>
         <div class="output-content">
           <pre class="output-value">{{ metadata | json }}</pre>
