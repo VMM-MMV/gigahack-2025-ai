@@ -2,7 +2,7 @@ from typing import Tuple, Dict, List, Any, Optional
 import spacy
 
 # Replace this with your spaCy model path (local folder path)
-MODEL_PATH = r"C:\Users\Huntrese\Documents\github\gigahack-2025-ai\best_model_epoch10"
+MODEL_PATH = "./best_model_epoch10"
 
 # Label map EXACTLY matching the Moldova-specific PII labels (do not change)
 LABEL_MAP = {
@@ -74,9 +74,24 @@ LABEL_MAP = {
 
 class Anonymizer:
     def __init__(self, model_path: Optional[str] = None):
-        # Load spaCy model directly
-        self.nlp = spacy.load(model_path or MODEL_PATH)
-        print(f"[Anonymizer] spaCy model loaded from {self.nlp.path}")
+        try:
+            # Try to load the custom model
+            self.nlp = spacy.load(model_path or MODEL_PATH)
+            print(f"[Anonymizer] Custom spaCy model loaded from {self.nlp.path}")
+        except Exception as e:
+            print(f"[Anonymizer] Failed to load custom model: {e}")
+            print("[Anonymizer] Falling back to basic Romanian model")
+            # Fallback to basic Romanian model or create blank model
+            try:
+                self.nlp = spacy.load("ro_core_news_sm")
+                print("[Anonymizer] Loaded ro_core_news_sm as fallback")
+            except:
+                print("[Anonymizer] Creating blank Romanian model")
+                self.nlp = spacy.blank("ro")
+                # Add basic NER pipeline if not present
+                if "ner" not in self.nlp.pipe_names:
+                    ner = self.nlp.add_pipe("ner")
+                    print("[Anonymizer] Added basic NER pipeline")
 
     @staticmethod
     def _map_label(entity_label: str) -> str:

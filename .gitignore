@@ -6,3 +6,6 @@ logs/
 
 
 !models/spacy_metadata_extraction_model3.0/best_model_epoch10/
+
+!best_model_epoch10/meta.json
+!best_model_epoch10/vocab/strings.json
