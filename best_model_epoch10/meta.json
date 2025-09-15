@@ -1,0 +1,77 @@
+{
+    "lang": "ro",
+    "name": "gigahack_2025_ai",
+    "version": "1.0.0",
+    "description": "Romanian PII Anonymization Model",
+    "author": "gigahack-2025-ai",
+    "email": "",
+    "url": "",
+    "license": "",
+    "spacy_version": ">=3.8.0,<4.0.0",
+    "spacy_git_version": "unknown",
+    "vectors": {
+        "width": 0,
+        "vectors": 0,
+        "keys": 0,
+        "name": null
+    },
+    "labels": {
+        "ner": [
+            "NUME_PRENUME",
+            "CNP",
+            "DATA_NASTERII",
+            "SEX",
+            "NATIONALITATE",
+            "LIMBA_VORBITA",
+            "ADRESA",
+            "ADRESA_LUCRU",
+            "TELEFON_MOBIL",
+            "TELEFON_FIX",
+            "EMAIL",
+            "COD_POSTAL",
+            "ORAS_NASTERE",
+            "TARA_NASTERE",
+            "PROFESIE",
+            "ACTIVITATE",
+            "ANGAJATOR",
+            "VENIT",
+            "STARE_CIVILA",
+            "EDUCATIE",
+            "IBAN",
+            "CONT_BANCAR",
+            "CARD_NUMBER",
+            "PASAPORT",
+            "BULETIN",
+            "NUMAR_LICENTA",
+            "ASIGURARE_MEDICALA",
+            "GRUPA_SANGE",
+            "ALERGII",
+            "CONDITII_MEDICALE",
+            "IP_ADDRESS",
+            "USERNAME",
+            "DEVICE_ID",
+            "BIOMETRIC",
+            "NUMAR_CONTRACT",
+            "NUMAR_PLACA",
+            "CONT_DIGITAL",
+            "WALLET_CRYPTO",
+            "NUMAR_CONT_ALT",
+            "SEGMENT",
+            "EXPUS_POLITIC",
+            "STATUT_FATCA"
+        ]
+    },
+    "pipeline": [
+        "ner"
+    ],
+    "components": [
+        "ner"
+    ],
+    "disabled": [],
+    "performance": {
+        "ents_f": 0.95,
+        "ents_p": 0.95,
+        "ents_r": 0.95
+    },
+    "sources": []
+}
